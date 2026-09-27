@@ -1,0 +1,66 @@
+{
+  "project_name": "tool-taxonomy-arbiter",
+  "version": "1.0.0",
+  "status": "PRODUCTION_READY",
+  "last_updated": "2026-09-27 11:55:00",
+  "search_topic": "software architectural taxonomy decision matrix classifier deterministic archetype evaluation",
+  "radar_query_vectors": [
+    "software architectural taxonomy decision matrix classifier deterministic archetype evaluation core",
+    "software architectural taxonomy decision matrix classifier deterministic archetype evaluation benchmark",
+    "software architectural taxonomy decision matrix classifier deterministic archetype evaluation spec"
+  ],
+  "grounded_sources": [
+    {
+      "name": "ByteByteGoHq/system-design-101",
+      "category": "OPEN_SOURCE",
+      "url": "https://github.com/ByteByteGoHq/system-design-101",
+      "stars": 90020,
+      "core_insight": "Explain complex systems using visuals and formal archetype definitions (工业界验证度: ⭐ 90020)",
+      "adopted_aspects": "吸收其关于分布式系统服务 (Svc)、存储中间件、离线计算装具 (Tool) 与边界守卫的正交分类模型",
+      "tradeoff": "将宏观系统架构图谱提炼为可直接执行的 7 维连续正交向量决策引擎"
+    },
+    {
+      "name": "tt-a1i/archify",
+      "category": "OPEN_SOURCE",
+      "url": "https://github.com/tt-a1i/archify",
+      "stars": 72334,
+      "core_insight": "Deterministic architectural analysis and AST structure mapping (工业界验证度: ⭐ 72334)",
+      "adopted_aspects": "吸收其静态文件遍历、代码文件与文档比例分析、端口监听签名检测算法",
+      "tradeoff": "针对 Agentic 生态拓展了 MCP 协议、AI Skill SOP、集群 Mesh 等专属新范式形态判定"
+    },
+    {
+      "name": "d2lang/d2",
+      "category": "OPEN_SOURCE",
+      "url": "https://github.com/d2lang/d2",
+      "stars": 25522,
+      "core_insight": "Modern declarative diagramming language with deterministic compiler logic (工业界验证度: ⭐ 25522)",
+      "adopted_aspects": "吸收其语法抽象语法树与确定性状态推导的设计哲学，确保相同输入永远产生相同决策树",
+      "tradeoff": "专注于软件工程资产分类与多仓库架构治理"
+    },
+    {
+      "name": "kgrzybek/modular-monolith-with-ddd",
+      "category": "OPEN_SOURCE",
+      "url": "https://github.com/kgrzybek/modular-monolith-with-ddd",
+      "stars": 14037,
+      "core_insight": "Domain-driven design and strict bounded context enforcement (工业界验证度: ⭐ 14037)",
+      "adopted_aspects": "吸收其领域边界防腐层理念，明确 Rule (负向红线) 与 Spec (正向规范) 的刚性界限",
+      "tradeoff": "融入云原生 CNCF 与 Spotify Backstage 的 11 级生态位模型"
+    },
+    {
+      "name": "NousResearch/hermes-agent",
+      "category": "OPEN_SOURCE",
+      "url": "https://github.com/NousResearch/hermes-agent",
+      "stars": 5400,
+      "core_insight": "Autonomous agent runtime and task orchestration taxonomy (工业界验证度: ⭐ 5400)",
+      "adopted_aspects": "吸收其对 Agentic SOP (Skill) 与底层执行装具 (Tool) 的解耦标准",
+      "tradeoff": "确立纯提示词工作流为 skill-*，二进制/命令行算法为 tool-* 的绝对分流红线"
+    }
+  ],
+  "architectural_invariants": [
+    "Mathematical Classification Invariance: f(x) == f(x)",
+    "Strict 7-Dimensional Orthogonal Feature Space",
+    "Universal CLI Facade (UCFS v1.0) 5-Verb Compliance",
+    "Domain Purity & Anti-Bleed",
+    "Proof-of-Truth & Invariant Testing"
+  ]
+}
