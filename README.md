@@ -95,9 +95,20 @@ $$\forall \vec{x} \in \mathcal{X}, \quad \text{Arbiter}(\vec{x}) \equiv \mathcal
 
 ---
 
-## 🚀 极速上手与 UCFS 五动词使用规范 (Usage & UCFS Verbs)
+## 🚀 快速开始 (Quick Start)
 
-本装具严格遵守 **Universal CLI Facade (UCFS v1.0)** 规范：
+```bash
+# 1. 依赖与运行时自检
+python main.py setup
+
+# 2. 执行自动化全量回归测试
+python main.py test
+
+# 3. 运行确定性架构形态仲裁
+python main.py run --idea "扫描本地目录并计算代码哈希"
+```
+
+### UCFS 五动词使用指南
 
 ### 1. 环境验证 (`setup`)
 ```bash
@@ -146,4 +157,4 @@ python main.py clean
 
 ## 📄 许可证与引用 (License & Citation)
 
-本项目采用 MIT 许可证开源。学术研究与工程架构引用请遵循 [`CITATION.cff`](file:///D:/github/tool-taxonomy-arbiter/CITATION.cff)。
+本项目采用 MIT 许可证开源。学术研究与工程架构引用请遵循 [CITATION.cff](CITATION.cff)。

@@ -149,13 +149,16 @@ def _print_verdict(v: GoalEvaluationVerdict):
     print("=" * 80)
     print(f" 🎯 基于核心目标的第一性原理架构形态裁决书 (Goal-Driven Arbiter Verdict)")
     print("=" * 80)
-    print(f" • 原始核心目标:     {v.target_goal}")
+    print(f" • 原始输入陈述:     {v.target_goal}")
+    print(f" • 纯粹问题域目标:   {v.pure_problem_goal}")
+    if v.has_solution_bias:
+        print(f" • 识别解域私货:     技术栈 {v.injected_tech_stack} | 架构声明 {v.injected_architecture_claims}")
     print(f" • 确定性裁定形态:   【 {v.archetype.value.upper()} 】 (标准前缀: {v.recommended_prefix})")
     print(f" • 推荐法定命名:     {v.suggested_name}")
     print(f" • 裁决置信度:       {v.confidence:.2%}")
     print(f" • 最小必要形态理由: {v.minimal_viable_rationale}")
     if v.anti_pattern_warning:
-        print(f" ⚠️  反模式设计预警:  {v.anti_pattern_warning}")
+        print(f" ⚠️  过度设计反模式:  {v.anti_pattern_warning}")
     print("-" * 80)
     print(" 🔍 第一性原理推导逻辑链 (First-Principles Deduction Chain):")
     for i, step in enumerate(v.deduction_chain, 1):

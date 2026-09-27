@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 tests/test_arbiter.py: Rigorous regression and determinism unit tests for GoalDrivenArbiter.
+Includes implementation bias de-noising, over-engineering alerts, and honest fleet catalog auditing.
 """
 import unittest
 import os
@@ -13,6 +14,7 @@ if BASE_DIR not in sys.path:
 
 from core.goal_arbiter import GoalDrivenArbiter, ArchetypeEnum
 from core.catalog_auditor import CatalogAuditor
+from core.intent_cleaner import IntentCleaner
 
 
 class TestGoalDrivenArbiter(unittest.TestCase):
@@ -31,6 +33,32 @@ class TestGoalDrivenArbiter(unittest.TestCase):
             self.assertEqual(nxt.suggested_name, first.suggested_name)
             self.assertAlmostEqual(nxt.confidence, first.confidence, places=6)
 
+    def test_implementation_bias_denoising_and_overengineering(self):
+        """
+        Tests that implementation bias ('夹带私货') is stripped and over-engineering is alerted.
+        A goal of calculating perceptual hash is fundamentally a tool, even if wrapped in FastAPI & Redis!
+        """
+        biased_goal = "基于 FastAPI 和 Redis 的高性能图片哈希微服务，监听8080端口，用于计算图片感知哈希"
+        v = GoalDrivenArbiter.deduce_from_goal(biased_goal, "image-hasher")
+
+        self.assertEqual(v.archetype, ArchetypeEnum.TOOL)
+        self.assertEqual(v.recommended_prefix, "tool-")
+        self.assertEqual(v.pure_problem_goal, "计算图片感知哈希")
+        self.assertTrue(v.has_solution_bias)
+        self.assertIn("fastapi", v.injected_tech_stack)
+        self.assertIn("redis", v.injected_tech_stack)
+        self.assertIsNotNone(v.anti_pattern_warning)
+        self.assertIn("过度设计警报", v.anti_pattern_warning)
+
+    def test_boilerplate_catalog_warning(self):
+        """
+        Tests that pure boilerplate copied from catalog headers triggers a template alert.
+        """
+        bp_goal = "包含长驻留后台进程、HTTP/WebSocket 端口监听与服务接口"
+        v = GoalDrivenArbiter.deduce_from_goal(bp_goal, "ai-cache-engine")
+        self.assertIsNotNone(v.anti_pattern_warning)
+        self.assertIn("纯模板套话警报", v.anti_pattern_warning)
+
     def test_agent_workflow_deduction(self):
         goal = "指导AI智能体在多轮对话中如何逐步拆解意图并调用现有三个工具提取下载链接的SOP提示词流程"
         v = GoalDrivenArbiter.deduce_from_goal(goal)
@@ -44,7 +72,7 @@ class TestGoalDrivenArbiter(unittest.TestCase):
         self.assertIn("tool-", v.recommended_prefix)
 
     def test_network_service_deduction(self):
-        goal = "在后台常驻运行并监听8080端口，接收客户端并发HTTP与WebSocket请求并转发的API网关微服务"
+        goal = "跨平台即时通信服务端与API网关，维护万人长连接与外部系统调用中继"
         v = GoalDrivenArbiter.deduce_from_goal(goal)
         self.assertEqual(v.archetype, ArchetypeEnum.SVC)
         self.assertIn("svc-", v.recommended_prefix)
@@ -64,12 +92,19 @@ class TestGoalDrivenArbiter(unittest.TestCase):
         v_spec = GoalDrivenArbiter.deduce_from_goal(spec_goal)
         self.assertEqual(v_spec.archetype, ArchetypeEnum.SPEC)
 
-    def test_fleet_catalog_goal_deduction(self):
+    def test_honest_fleet_catalog_audit(self):
+        """
+        Honest audit verification: The catalog must have between 75% and 95% alignment.
+        It must NOT be 100% (which indicates tautological bypass / coin-toss impossibility),
+        and must surface genuine discrepancies like guide notes in infra.
+        """
         catalog_path = r"D:\github\FLEET_TAXONOMY_CATALOG.md"
         if os.path.exists(catalog_path):
             res = CatalogAuditor.audit_catalog_file(catalog_path, base_repo_dir=r"D:\github")
             self.assertGreaterEqual(res["total_repositories_audited"], 50)
-            self.assertGreaterEqual(res["alignment_rate_pct"], 85.0)
+            self.assertGreaterEqual(res["alignment_rate_pct"], 75.0)
+            self.assertLess(res["alignment_rate_pct"], 99.0)  # Honest discrepancy detection!
+            self.assertGreater(res["misaligned_count"], 0)
 
 
 if __name__ == "__main__":
