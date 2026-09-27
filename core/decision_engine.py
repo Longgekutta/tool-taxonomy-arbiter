@@ -94,7 +94,7 @@ class DecisionEngine:
 
         # Step 1: Strict Cut-off Invariants
         # Invariant A: Rule vs Spec
-        if v_dict["boundary"] >= 0.75:
+        if v_dict["boundary"] >= 0.75 and v_dict["agenticity"] <= 0.5:
             if any(w in title_lower for w in ["禁止", "红线", "防线", "guard", "sentinel", "rule", "安全拦截"]):
                 derivation.append("触发刚性不变量: 高边界性(>=0.75) + 负向约束/拦截定义 -> 锁定 ArchetypeEnum.RULE")
                 return cls._create_verdict(ArchetypeEnum.RULE, vector, 0.98, concept_title, derivation)
@@ -117,7 +117,7 @@ class DecisionEngine:
             derivation.append("触发刚性不变量: 智能体SOP工作流>=0.75 + 低机器代码 + 瞬时加载 -> 锁定 ArchetypeEnum.SKILL")
             return cls._create_verdict(ArchetypeEnum.SKILL, vector, 0.95, concept_title, derivation)
 
-        # Invariant E: Service Daemon Lock (Checked before generic APP if it is a backend server/gateway)
+        # Invariant E: Service Daemon Lock
         if v_dict["lifecycle"] >= 0.75 and v_dict["protocol"] >= 0.6 and v_dict["interface"] <= 0.6:
             derivation.append("触发刚性不变量: 常驻守护进程(>=0.75) + 网络协议(>=0.6) + 无独占GUI界面 -> 锁定 ArchetypeEnum.SVC")
             return cls._create_verdict(ArchetypeEnum.SVC, vector, 0.95, concept_title, derivation)
@@ -208,16 +208,16 @@ class DecisionEngine:
 
     @classmethod
     def extract_vector_from_text(cls, text: str) -> Tuple[DimensionVector, List[str]]:
-        """
-        Deterministically extract the 7-dimensional vector from free-form concept text.
-        """
         derivation = []
         text_lower = text.lower()
+
+        is_agent_workflow = any(w in text_lower for w in ["sop", "提示词", "agent", "智能体", "prompt", "会话引导"])
 
         # D5: Boundary
         boundary = 0.0
         is_negative_rule = any(w in text_lower for w in ["禁止", "红线", "越界", "防线", "guard", "security rule", "防御", "拦截"])
-        is_spec = any(w in text_lower for w in ["规范", "标准", "rfc", "神谕", "oracle", "契约", "spec", "acceptance"])
+        is_spec = (any(w in text_lower for w in ["rfc", "神谕", "oracle", "契约", "spec", "acceptance"]) or
+                   ("规范" in text_lower and not is_agent_workflow and not any(w in text_lower for w in ["操作规范", "流程规范"])))
 
         if is_negative_rule:
             boundary = 1.0
@@ -266,10 +266,9 @@ class DecisionEngine:
 
         # D4: Agenticity
         agenticity = 0.0
-        agent_signals = ["agent", "智能体", "ai思考", "prompt", "提示词", "sop", "会话", "大模型", "llm", "多步骤引导", "工作流"]
-        if any(w in text_lower for w in agent_signals):
-            agenticity = 0.9
-            derivation.append("命中智能体/SOP/AI会话流程信号 -> Agenticity 设定 0.90")
+        if is_agent_workflow:
+            agenticity = 0.95
+            derivation.append("命中智能体/SOP/AI会话流程信号 -> Agenticity 设定 0.95")
 
         # D6: Swarm
         swarm = 0.0
@@ -280,7 +279,6 @@ class DecisionEngine:
 
         # D7: Interface
         interface = 0.0
-        # Dedicated client applications vs backend server
         is_backend_server = any(w in text_lower for w in ["网关", "反向代理", "微服务", "服务中枢", "server", "常驻后台", "监听"])
         app_signals = ["app", "apk", "安卓应用", "桌面应用", "gui", "移动端", "网页前端", "web ui", "端到端业务", "知乎爬虫", "知乎发布", "爬虫机器人"]
         if any(w in text_lower for w in app_signals) and not is_backend_server:
