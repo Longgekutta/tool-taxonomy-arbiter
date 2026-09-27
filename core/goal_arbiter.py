@@ -100,25 +100,31 @@ class GoalDrivenArbiter:
             return cls._make_verdict(ArchetypeEnum.RULE, raw_desc, pure_goal, entity_name, 0.98,
                                      "负向安全防线与行为拦截规则，无需独立工程或常驻服务，应以规则约束形式生效。", chain, denoise_report)
 
-        # B: Rigid specification, contract, acceptance oracle (Spec)
-        is_formal_spec = any(w in pure_lower for w in ["标准规范", "rfc", "神谕", "契约", "格式定义", "协议标准", "统一规范", "spec", "acceptance", "命名规范"])
-        if is_formal_spec and not any(w in pure_lower for w in ["常驻", "服务器", "客户端", "apk", "sop"]):
-            chain.append("第一性原理推演 [分流点 1: 刚性规范标准]: 该目标的本质是确立跨系统的数据契约与验收神谕，零独立机器执行代码")
-            chain.append("-> 最小必要形态: spec-* (刚性规范标准)")
-            return cls._make_verdict(ArchetypeEnum.SPEC, raw_desc, pure_goal, entity_name, 0.98,
-                                     "正向数据契约、通信规范或验收神谕，应以纯文本/RFC Schema 存在，严禁过度设计为可执行程序。", chain, denoise_report)
-
-        # C: Agent Cognitive Workflow / SOP (Skill)
+        # B: Agent Cognitive Workflow / SOP (Skill)
         is_agent_guidance = (
-            any(w in pure_lower for w in ["sop", "提示词", "指导ai", "教agent", "操作指南", "智能体工作流", "口语搜索", "会话引导", "操作步骤"]) or
+            any(w in pure_lower for w in [
+                "sop", "提示词", "指导ai", "教agent", "操作指南", "智能体工作流",
+                "口语搜索", "会话引导", "操作步骤", "特种技能", "智能体技能", "agent skill", "认知技能"
+            ]) or
             ("调用" in pure_lower and "工具" in pure_lower and any(w in pure_lower for w in ["ai", "大模型", "智能体", "流程"]))
         )
-        if is_agent_guidance and not any(w in pure_lower for w in ["常驻后台", "监听端口", "桌面端", "apk"]):
+        if is_agent_guidance and not any(w in pure_lower for w in ["常驻后台", "监听端口", "桌面端", "apk安装包"]):
             chain.append("第一性原理推演 [分流点 1: 智能体认知 SOP]: 该目标的核心缺口是'大模型不知道该按什么步骤思考与编排工具'，底层执行力已由既有工具/API具备")
             chain.append("-> 最小必要形态: skill-* (Agent 认知特种技能)")
             warning = "【警惕过度设计】切忌为此编写庞大项目！它只需一份严密的 Markdown SOP 与轻量辅助脚本即可在 AI 宿主中无缝运行。"
             return cls._make_verdict(ArchetypeEnum.SKILL, raw_desc, pure_goal, entity_name, 0.96,
                                      "智能体多轮会话认知指导与工具装配流程，属于纯智力策略层。", chain, denoise_report, warning)
+
+        # C: Rigid specification, contract, acceptance oracle (Spec)
+        is_formal_spec = any(w in pure_lower for w in [
+            "标准规范", "rfc", "神谕", "契约", "格式定义", "协议标准", "统一规范",
+            "spec", "acceptance", "命名规范", "公理标准", "公理", "标准契约", "工程规范"
+        ])
+        if is_formal_spec and not any(w in pure_lower for w in ["常驻", "服务器", "客户端", "sop", "装具", "测试装具", "命令行装具"]):
+            chain.append("第一性原理推演 [分流点 1: 刚性规范标准]: 该目标的本质是确立跨系统的数据契约与验收神谕，零独立机器执行代码")
+            chain.append("-> 最小必要形态: spec-* (刚性规范标准)")
+            return cls._make_verdict(ArchetypeEnum.SPEC, raw_desc, pure_goal, entity_name, 0.98,
+                                     "正向数据契约、通信规范或验收神谕，应以纯文本/RFC Schema 存在，严禁过度设计为可执行程序。", chain, denoise_report)
 
         # D: Documentation & Knowledge base (Doc)
         is_doc = any(w in pure_lower for w in [
@@ -182,10 +188,14 @@ class GoalDrivenArbiter:
                                      "长驻后台网络进程与请求中继微网关，承载并发吞吐。", chain, denoise_report)
 
         # J: End-User Application (App / GUI / Mobile APK / Specialized Business Robot)
-        is_end_user_app = any(w in pure_lower for w in [
-            "apk", "安卓", "桌面端", "桌面应用", "gui", "界面", "客户端", "网页端",
-            "知乎自动化", "邮件监控", "移动压测", "爬虫机器人", "app"
-        ])
+        is_asset_download_target = any(w in pure_lower for w in ["apk/exe", "apk、exe", "嗅探", "下载资产", "资产嗅探", "直链直达", "嗅探与直链"])
+        is_end_user_app = (
+            not is_asset_download_target and
+            any(w in pure_lower for w in [
+                "安卓应用", "安卓客户端", "安卓app", "桌面端", "桌面应用", "gui", "人机界面", "用户客户端", "网页端应用",
+                "知乎自动化", "邮件监控", "移动压测", "爬虫机器人"
+            ])
+        )
         if is_end_user_app:
             chain.append("第一性原理推演 [分流点 2: 终端交互应用]: 该目标直接面对最终人类用户（需交互式界面、移动设备安装）或特定闭环业务机器人")
             chain.append("-> 最小必要形态: app-* (终端业务应用 / 客户端)")

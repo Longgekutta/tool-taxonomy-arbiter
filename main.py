@@ -25,6 +25,7 @@ if BASE_DIR not in sys.path:
 from core.goal_arbiter import GoalDrivenArbiter, GoalEvaluationVerdict, ArchetypeEnum
 from core.repo_analyzer import RepoAnalyzer
 from core.catalog_auditor import CatalogAuditor
+from core.fleet_auditor import FleetAuditor
 
 
 def run_setup(args) -> int:
@@ -166,11 +167,41 @@ def _print_verdict(v: GoalEvaluationVerdict):
     print("=" * 80)
 
 
+def run_fleet(args) -> int:
+    res = FleetAuditor.audit_all_github_repos()
+    if args.json:
+        print(json.dumps(res, ensure_ascii=False, indent=2))
+    else:
+        print("=" * 80)
+        print(" 🌐 全域 GitHub 105 个仓库双向形态第一性原理审计报告 (105 Fleet Repos Audit)")
+        print("=" * 80)
+        print(f" • GitHub 仓库总数:       {res['total_github_repositories']} 个")
+        print(f" • 已规范前缀仓库数:     {res['prefixed_repositories_count']} 个")
+        print(f" • 历史未命名前缀仓库:   {res['unprefixed_legacy_count']} 个")
+        print(f" • 规范前缀对齐一致数:   {res['prefixed_aligned_count']} 个")
+        print(f" • 规范前缀错配分歧数:   {res['prefixed_misaligned_count']} 个")
+        print(f" • 规范前缀一致率:       {res['prefixed_alignment_rate_pct']}%")
+        print(f" • 过度设计抓包预警数:   {res['over_engineering_alerts_count']} 个")
+        print(f" • 纯模板套话警告数:     {res['boilerplate_warnings_count']} 个")
+        print("-" * 80)
+        print(" 🔍 重点形态错配与过度设计抓包清单 (Top Discrepancies & Alerts):")
+        mis = [d for d in res['details'] if d['current_prefix'] != 'unprefixed' and not d['is_aligned']]
+        for i, m in enumerate(mis, 1):
+            print(f"   {i}. 仓库: {m['repo_name']}")
+            print(f"      当前前缀: [{m['current_prefix']}] ──➔ 裁决最小必要形态: 【{m['deduced_archetype'].upper()}】 (建议对齐: {m['recommended_name']})")
+            print(f"      核心目标: {m['raw_goal'][:75]}...")
+            if m.get('warning'):
+                print(f"      ⚠️ 警报: {m['warning']}")
+            print()
+        print("=" * 80)
+    return 0
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="tool-taxonomy-arbiter: First-Principles Goal-Driven Architectural Decision Arbiter"
     )
-    parser.add_argument("verb", nargs="?", default="run", choices=["setup", "run", "test", "health", "clean", "judge", "audit"])
+    parser.add_argument("verb", nargs="?", default="run", choices=["setup", "run", "test", "health", "clean", "judge", "audit", "fleet"])
     parser.add_argument("extra_args", nargs="*", help="Extra arguments or goal statement")
     parser.add_argument("--idea", "-i", type=str, help="Core goal or mission statement to deduce")
     parser.add_argument("--path", "-p", type=str, help="Local repo path or catalog markdown to deduce")
@@ -192,7 +223,8 @@ def main():
         "run": run_arbiter,
         "test": run_test,
         "health": run_health,
-        "clean": run_clean
+        "clean": run_clean,
+        "fleet": run_fleet
     }
 
     fn = dispatch.get(args.verb, run_arbiter)
