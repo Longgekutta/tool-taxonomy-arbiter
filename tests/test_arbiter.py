@@ -106,6 +106,33 @@ class TestGoalDrivenArbiter(unittest.TestCase):
             self.assertLess(res["alignment_rate_pct"], 99.0)  # Honest discrepancy detection!
             self.assertGreater(res["misaligned_count"], 0)
 
+    def test_adr_recorder_and_physical_verifier(self):
+        """
+        Verify ADR recording generates valid append-only file and physical verifier evaluates code.
+        """
+        import tempfile
+        import shutil
+        from core.adr_recorder import ADRRecorder
+        from core.physical_verifier import PhysicalVerifier
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create dummy repo
+            readme_p = os.path.join(tmpdir, "README.md")
+            with open(readme_p, "w", encoding="utf-8") as f:
+                f.write("# dummy-tool\n> 极速无状态命令行脚本，计算数据后秒级退出\n")
+
+            verdict = GoalDrivenArbiter.deduce_from_goal("极速无状态命令行脚本，计算数据后秒级退出", "dummy-tool")
+            res_adr = ADRRecorder.record_verdict(tmpdir, verdict)
+            self.assertEqual(res_adr["status"], "success")
+            self.assertEqual(res_adr["adr_id"], "0001")
+            self.assertTrue(os.path.exists(res_adr["filepath"]))
+
+            # Physical verify
+            res_ver = PhysicalVerifier.verify_repo(tmpdir, verdict)
+            self.assertEqual(res_ver["status"], "PASS")
+            self.assertEqual(res_ver["violations_count"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()
+

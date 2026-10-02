@@ -18,12 +18,11 @@ class RepoAnalyzer:
     """
 
     @classmethod
-    def analyze_path(cls, repo_path: str) -> GoalEvaluationVerdict:
-        if not os.path.exists(repo_path):
-            raise FileNotFoundError(f"Path does not exist: {repo_path}")
-
-        repo_name = os.path.basename(os.path.abspath(repo_path))
-        extracted_goal = cls.extract_mission_from_repo(repo_path)
+    def analyze_path(cls, target_input: str) -> GoalEvaluationVerdict:
+        from core.repo_resolver import RepoResolver
+        resolved_path, meta = RepoResolver.resolve(target_input)
+        repo_name = os.path.basename(resolved_path)
+        extracted_goal = cls.extract_mission_from_repo(resolved_path)
 
         # Forward deduction strictly based on the core goal
         verdict = GoalDrivenArbiter.deduce_from_goal(extracted_goal, entity_name=repo_name)

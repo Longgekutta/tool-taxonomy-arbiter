@@ -105,35 +105,39 @@ def run_clean(args) -> int:
 
 
 def run_arbiter(args) -> int:
-    # 1. Direct path audit
-    if args.path:
-        target = os.path.abspath(args.path)
-        if os.path.isfile(target) and target.endswith(".md"):
-            catalog_res = CatalogAuditor.audit_catalog_file(target, base_repo_dir=os.path.dirname(target))
+    from core.repo_resolver import RepoResolver
+    # 1. Direct path / repo audit
+    target_raw = args.path or (args.extra_args[0] if args.extra_args else "")
+    if target_raw:
+        if os.path.isfile(target_raw) and target_raw.endswith(".md"):
+            catalog_res = CatalogAuditor.audit_catalog_file(target_raw, base_repo_dir=os.path.dirname(os.path.abspath(target_raw)))
             if args.json:
                 print(json.dumps(catalog_res, ensure_ascii=False, indent=2))
             else:
                 print("=" * 80)
-                print(f" 🎯 基于原始使命的 Fleet Taxonomy Catalog 目标推演审计: {os.path.basename(target)}")
+                print(f" 🎯 基于原始使命的 Fleet Taxonomy Catalog 目标推演审计: {os.path.basename(target_raw)}")
                 print(f" • Total Audited:    {catalog_res['total_repositories_audited']}")
                 print(f" • Aligned/Agreed:   {catalog_res['aligned_count']}")
                 print(f" • Alignment Rate:   {catalog_res['alignment_rate_pct']}%")
                 print(f" • Invariant Stable: {'PASS (>=85%)' if catalog_res['is_invariant_stable'] else 'FAIL'}")
                 print("=" * 80)
             return 0
-        elif os.path.isdir(target):
+
+        # Try resolving target_raw as repository (local path, repo name, git URL, slug)
+        try:
+            target, _ = RepoResolver.resolve(target_raw)
             verdict = RepoAnalyzer.analyze_path(target)
             if args.json:
                 print(verdict.to_json())
             else:
                 _print_verdict(verdict)
             return 0
-        else:
-            print(f"[ERROR] Path not recognized: {args.path}", file=sys.stderr)
-            return 1
+        except Exception:
+            # Not a repository, treat as intent / idea text below
+            pass
 
     # 2. Idea / Intent text evaluation
-    idea_text = args.idea or (args.extra_args[0] if args.extra_args else "")
+    idea_text = args.idea or target_raw
     if not idea_text:
         idea_text = "写一个全平台自动检测GitHub软件更新，扫描本地文件夹并一键批量静默安装更新包的命令行装具"
 
@@ -197,11 +201,69 @@ def run_fleet(args) -> int:
     return 0
 
 
+def run_record(args) -> int:
+    from core.adr_recorder import ADRRecorder
+    from core.repo_resolver import RepoResolver
+    target_raw = args.path or (args.extra_args[0] if args.extra_args else ".")
+    try:
+        target, _ = RepoResolver.resolve(target_raw)
+    except Exception as e:
+        print(f"[ERROR] Failed to resolve target repository '{target_raw}': {e}", file=sys.stderr)
+        return 1
+
+    verdict = RepoAnalyzer.analyze_path(target)
+    res = ADRRecorder.record_verdict(target, verdict)
+    if args.json:
+        print(json.dumps(res, ensure_ascii=False, indent=2))
+    else:
+        print("=" * 80)
+        print(f" 📜 架构决策记录 (ADR) 权威不可变状态机写入成功")
+        print("=" * 80)
+        print(f" • 归属仓库:   {os.path.basename(target)}")
+        print(f" • 决策编号:   ADR-{res['adr_id']}")
+        print(f" • 固化路径:   {res['filepath']}")
+        print(f" • 法定形态:   【 {verdict.archetype.value.upper()} 】 ({verdict.suggested_name})")
+        print("=" * 80)
+    return 0
+
+
+def run_verify(args) -> int:
+    from core.physical_verifier import PhysicalVerifier
+    from core.repo_resolver import RepoResolver
+    target_raw = args.path or (args.extra_args[0] if args.extra_args else ".")
+    try:
+        target, _ = RepoResolver.resolve(target_raw)
+    except Exception as e:
+        print(f"[ERROR] Failed to resolve target repository '{target_raw}': {e}", file=sys.stderr)
+        return 1
+
+    verdict = RepoAnalyzer.analyze_path(target)
+    res = PhysicalVerifier.verify_repo(target, verdict)
+    if args.json:
+        print(json.dumps(res, ensure_ascii=False, indent=2))
+    else:
+        print("=" * 80)
+        print(f" 🔬 物理运行期架构合规性真实性验真: {res['repo_name']}")
+        print("=" * 80)
+        print(f" • 裁决形态:     【 {res['deduced_archetype'].upper()} 】")
+        print(f" • 验真结果:     {res['status']} (架构纯度分: {res['purity_score']}/100)")
+        print(f" • 执行检查项:   {len(res['checks_performed'])} 项")
+        for chk in res['checks_performed']:
+            print(f"    ✓ {chk}")
+        if res['violations']:
+            print("-" * 80)
+            print(f" ⚠️  越界违规项清单 ({res['violations_count']} 处):")
+            for v in res['violations']:
+                print(f"    • {v}")
+        print("=" * 80)
+    return 0 if res['status'] == "PASS" else 1
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="tool-taxonomy-arbiter: First-Principles Goal-Driven Architectural Decision Arbiter"
     )
-    parser.add_argument("verb", nargs="?", default="run", choices=["setup", "run", "test", "health", "clean", "judge", "audit", "fleet"])
+    parser.add_argument("verb", nargs="?", default="run", choices=["setup", "run", "test", "health", "clean", "judge", "audit", "fleet", "record", "verify"])
     parser.add_argument("extra_args", nargs="*", help="Extra arguments or goal statement")
     parser.add_argument("--idea", "-i", type=str, help="Core goal or mission statement to deduce")
     parser.add_argument("--path", "-p", type=str, help="Local repo path or catalog markdown to deduce")
@@ -224,7 +286,9 @@ def main():
         "test": run_test,
         "health": run_health,
         "clean": run_clean,
-        "fleet": run_fleet
+        "fleet": run_fleet,
+        "record": run_record,
+        "verify": run_verify
     }
 
     fn = dispatch.get(args.verb, run_arbiter)
@@ -233,3 +297,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
