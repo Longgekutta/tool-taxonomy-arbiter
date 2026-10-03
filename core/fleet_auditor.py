@@ -34,13 +34,25 @@ class FleetAuditor:
         return "unprefixed"
 
     @classmethod
+    def get_default_base_dir(cls) -> str:
+        env_dir = os.environ.get("AGENT_WORKSPACE_ROOT") or os.environ.get("GITHUB_TOOLS_ROOT")
+        if env_dir and os.path.exists(env_dir):
+            return env_dir
+        from pathlib import Path
+        sibling_dir = str(Path(__file__).resolve().parent.parent.parent)
+        if os.path.exists(sibling_dir):
+            return sibling_dir
+        return "D:/github"
+
+    @classmethod
     def extract_goal_for_repo(
         cls,
         repo_name: str,
         gh_desc: Optional[str] = None,
-        base_dir: str = "D:/github",
+        base_dir: Optional[str] = None,
         catalog_map: Optional[Dict[str, Dict[str, str]]] = None
     ) -> Tuple[str, str]:
+        base_dir = base_dir or cls.get_default_base_dir()
         """
         Extracts the most authentic problem-domain goal possible.
         Priority:
@@ -107,7 +119,8 @@ class FleetAuditor:
         return repo_name.replace("-", " "), "repo_name_fallback"
 
     @classmethod
-    def load_catalog_map(cls, catalog_path: str = "D:/github/FLEET_TAXONOMY_CATALOG.md") -> Dict[str, Dict[str, str]]:
+    def load_catalog_map(cls, catalog_path: Optional[str] = None) -> Dict[str, Dict[str, str]]:
+        catalog_path = catalog_path or os.path.join(cls.get_default_base_dir(), "FLEET_TAXONOMY_CATALOG.md")
         catalog_map = {}
         if not os.path.exists(catalog_path):
             return catalog_map
@@ -133,10 +146,13 @@ class FleetAuditor:
     @classmethod
     def audit_all_github_repos(
         cls,
-        json_file: str = "D:/github/all_github_repos.json",
-        base_dir: str = "D:/github",
-        catalog_path: str = "D:/github/FLEET_TAXONOMY_CATALOG.md"
+        json_file: Optional[str] = None,
+        base_dir: Optional[str] = None,
+        catalog_path: Optional[str] = None
     ) -> Dict[str, Any]:
+        base_dir = base_dir or cls.get_default_base_dir()
+        json_file = json_file or os.path.join(base_dir, "all_github_repos.json")
+        catalog_path = catalog_path or os.path.join(base_dir, "FLEET_TAXONOMY_CATALOG.md")
         if not os.path.exists(json_file):
             raise FileNotFoundError(f"GitHub repos json not found: {json_file}")
 
